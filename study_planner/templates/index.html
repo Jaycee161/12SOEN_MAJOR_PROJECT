@@ -1,24 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Study Planner</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta charset="UTF-8">
+<title>Study Planner</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 40px auto;
+    }
+    .hidden { display: none; }
+    input, button {
+        padding: 8px;
+        margin: 6px 0;
+        width: 100%;
+    }
+    #taskList div {
+        padding: 10px;
+        border: 1px solid #ddd;
+        margin-top: 8px;
+    }
+</style>
 </head>
 <body>
-    <h1>Study Planner</h1>
 
-    <form method="POST">
-        <label>Subject:</label>
-        <input type="text" name="subject" required>
+<h1>Study Planner</h1>
 
-        <label>Task:</label>
-        <input type="text" name="task" required>
+<!-- LOGIN SECTION -->
+<div id="loginSection">
+    <h2>Login</h2>
+    <input id="loginUser" type="text" placeholder="Username">
+    <input id="loginPass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
 
-        <label>Due date:</label>
-        <input type="date" name="due_date" required>
+    <p>Don't have an account? <a href="#" onclick="showSignup()">Sign up</a></p>
+</div>
 
-        <button type="submit">Add Task</button>
-    </form>
+<!-- SIGNUP SECTION -->
+<div id="signupSection" class="hidden">
+    <h2>Create Account</h2>
+    <input id="signupUser" type="text" placeholder="Choose a username">
+    <input id="signupPass" type="password" placeholder="Choose a password">
+    <button onclick="signup()">Sign Up</button>
+
+    <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+</div>
+
+<!-- STUDY PLANNER SECTION -->
+<div id="plannerSection" class="hidden">
+    <h2>Welcome, <span id="currentUser"></span></h2>
+    <button onclick="logout()">Logout</button>
+
+    <h3>Add Task</h3>
+    <input id="subject" type="text" placeholder="Subject">
+    <input id="task" type="text" placeholder="Task">
+    <input id="due" type="date">
+    <button onclick="addTask()">Add Task</button>
+
+    <h3>Your Tasks</h3>
+    <div id="taskList"></div>
+</div>
+
+<script>
+// Store users + tasks in browser
+let users = JSON.parse(localStorage.getItem("users")) || {};
+let tasks = JSON.parse(localStorage.getItem("tasks")) || {};
+let currentUser = null;
+
+// Show/hide sections
+function showSignup() {
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("signupSection").classList.remove("hidden");
+}
+function showLogin() {
+    document.getElementById("signupSection").classList.add("hidden");
+    document.getElementById("loginSection").classList.remove("hidden");
+}
+
+// Signup
+function signup() {
+    let user = document.getElementById("signupUser").value;
+    let pass = document.getElementById("signupPass").value;
+
+    if (users[user]) {
+        alert("User already exists");
+        return;
+    }
+
+    users[user] = pass;
+    tasks[user] = [];
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    alert("Account created");
+    showLogin();
+}
+
+// Login
+function login() {
+    let user = document.getElementById("loginUser").value;
+    let pass = document.getElementById("loginPass").value;
+
+    if (!users[user] || users[user] !== pass) {
+        alert("Incorrect username or password");
+        return;
+    }
+
+    currentUser = user;
+    document.getElementById("currentUser").textContent = user;
+
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("signupSection").classList.add("hidden");
+    document.getElementById("plannerSection").classList.remove("hidden");
+
+    loadTasks();
+}
+
+// Logout
+function logout() {
+    currentUser = null;
+    document.getElementById("plannerSection").classList.add("hidden");
+    document.getElementById("loginSection").classList.remove("hidden");
+}
+
+// Add task
+function addTask() {
+    let subject = document.getElementById("subject").value;
+    let task = document.getElementById("task").value;
+    let due = document.getElementById("due").value;
+
+    if (!subject || !task || !due) {
+        alert("Fill all fields");
+        return;
+    }
+
+    tasks[currentUser].push({ subject, task, due });
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    loadTasks();
+}
+
+// Load tasks
+function loadTasks() {
+    let list = document.getElementById("taskList");
+    list.innerHTML = "";
+
+    tasks[currentUser].forEach((t, i) => {
+        let div = document.createElement("div");
+        div.innerHTML = `<strong>${t.subject}</strong><br>${t.task}<br>Due: ${t.due}`;
+        list.appendChild(div);
+    });
+}
+</script>
+
 </body>
 </html>
