@@ -20,27 +20,5 @@
 
         <button type="submit">Add Task</button>
     </form>
-
-    <h2>Upcoming Tasks</h2>
-    <table>
-        <tr>
-            <th>#</th>
-            <th>Subject</th>
-            <th>Task</th>
-            <th>Due date</th>
-            <th>Action</th>
-        </tr>
-        {% for t in tasks %}
-        <tr>
-            <td>{{ loop.index0 }}</td>
-            <td>{{ t.subject }}</td>
-            <td>{{ t.task }}</td>
-            <td>{{ t.due_date }}</td>
-            <td>
-                <a href="{{ url_for('delete_task', task_id=loop.index0) }}">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
 </body>
 </html>
