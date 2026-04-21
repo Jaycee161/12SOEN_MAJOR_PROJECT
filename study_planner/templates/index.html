@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Study Planner</h1>
+
+    <form method="POST">
+        <label>Subject:</label>
+        <input type="text" name="subject" required>
+
+        <label>Task:</label>
+        <input type="text" name="task" required>
+
+        <label>Due date:</label>
+        <input type="date" name="due_date" required>
+
+        <button type="submit">Add Task</button>
+    </form>
+
+    <h2>Upcoming Tasks</h2>
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Subject</th>
+            <th>Task</th>
+            <th>Due date</th>
+            <th>Action</th>
+        </tr>
+        {% for t in tasks %}
+        <tr>
+            <td>{{ loop.index0 }}</td>
+            <td>{{ t.subject }}</td>
+            <td>{{ t.task }}</td>
+            <td>{{ t.due_date }}</td>
+            <td>
+                <a href="{{ url_for('delete_task', task_id=loop.index0) }}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
