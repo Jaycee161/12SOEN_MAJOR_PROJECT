@@ -1,22 +1,69 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-tasks = []
+# In-memory storage (for demo only)
+users = {}
+tasks = {}
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        subject = request.form.get("subject")
-        task = request.form.get("task")
-        due_date = request.form.get("due_date")
-        tasks.append({
-            "subject": subject,
-            "task": task,
-            "due_date": due_date
-        })
-        return redirect(url_for("index"))
+
+@app.route("/")
+def home():
     return render_template("index.html")
+
+
+@app.route("/signup", methods=["POST"])
+def signup():
+    data = request.get_json()
+    user = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+
+    if not user or not password:
+        return jsonify({"success": False, "message": "Missing username or password"}), 400
+
+    if user in users:
+        return jsonify({"success": False, "message": "User already exists"}), 400
+
+    users[user] = password
+    tasks[user] = []
+    return jsonify({"success": True})
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    user = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+
+    if user not in users or users[user] != password:
+        return jsonify({"success": False, "message": "Invalid credentials"}), 401
+
+    return jsonify({"success": True})
+
+
+@app.route("/tasks/<username>", methods=["GET"])
+def get_tasks(username):
+    username = username.strip()
+    return jsonify(tasks.get(username, []))
+
+
+@app.route("/tasks/<username>", methods=["POST"])
+def add_task(username):
+    username = username.strip()
+    if username not in tasks:
+        return jsonify({"success": False, "message": "User not found"}), 404
+
+    data = request.get_json()
+    subject = data.get("subject", "").strip()
+    task = data.get("task", "").strip()
+    due = data.get("due", "").strip()
+
+    if not subject or not task or not due:
+        return jsonify({"success": False, "message": "Missing fields"}), 400
+
+    tasks[username].append({"subject": subject, "task": task, "due": due})
+    return jsonify({"success": True})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
