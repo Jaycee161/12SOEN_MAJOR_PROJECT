@@ -1,159 +1,97 @@
-let currentUser = null;
+const loginSection = document.getElementById("loginSection");
+const signupSection = document.getElementById("signupSection");
+const plannerSection = document.getElementById("plannerSection");
 
-// Helpers
-function showSignup() {
-    document.getElementById("loginSection").classList.add("hidden");
-    document.getElementById("signupSection").classList.remove("hidden");
-}
+document.getElementById("showSignupLink").onclick = () => {
+    loginSection.classList.add("d-none");
+    signupSection.classList.remove("d-none");
+};
 
-function showLogin() {
-    document.getElementById("signupSection").classList.add("hidden");
-    document.getElementById("loginSection").classList.remove("hidden");
-}
+document.getElementById("showLoginLink").onclick = () => {
+    signupSection.classList.add("d-none");
+    loginSection.classList.remove("d-none");
+};
 
-function showPlanner() {
-    document.getElementById("loginSection").classList.add("hidden");
-    document.getElementById("signupSection").classList.add("hidden");
-    document.getElementById("plannerSection").classList.remove("hidden");
-}
+document.getElementById("signupBtn").onclick = async () => {
+    const username = signupUser.value;
+    const password = signupPass.value;
 
-function logout() {
-    currentUser = null;
-    document.getElementById("plannerSection").classList.add("hidden");
-    document.getElementById("loginSection").classList.remove("hidden");
-    document.getElementById("currentUser").textContent = "";
-    document.getElementById("taskList").innerHTML = "";
-}
-
-// API calls
-async function apiSignup(username, password) {
     const res = await fetch("/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username, password})
     });
-    return res.json();
-}
 
-async function apiLogin(username, password) {
+    const data = await res.json();
+    if (data.success) {
+        alert("Account created!");
+        signupSection.classList.add("d-none");
+        loginSection.classList.remove("d-none");
+    } else {
+        alert(data.message);
+    }
+};
+
+document.getElementById("loginBtn").onclick = async () => {
+    const username = loginUser.value;
+    const password = loginPass.value;
+
     const res = await fetch("/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username, password})
     });
-    return res.json();
-}
 
-async function apiGetTasks(username) {
-    const res = await fetch(`/tasks/${encodeURIComponent(username)}`);
-    return res.json();
-}
+    const data = await res.json();
+    if (data.success) {
+        currentUser.textContent = username;
+        loginSection.classList.add("d-none");
+        plannerSection.classList.remove("d-none");
+        loadTasks(username);
+    } else {
+        alert(data.message);
+    }
+};
 
-async function apiAddTask(username, subject, task, due) {
-    const res = await fetch(`/tasks/${encodeURIComponent(username)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, task, due })
+async function loadTasks(username) {
+    const res = await fetch(`/tasks/${username}`);
+    const list = await res.json();
+
+    taskList.innerHTML = "";
+
+    list.forEach(t => {
+        taskList.innerHTML += `
+            <div class="task-card">
+                <strong>${t.subject}</strong><br>
+                ${t.task}<br>
+                <span class="task-date">Due: ${t.due}</span>
+            </div>
+        `;
     });
-    return res.json();
 }
 
-// UI logic
-async function handleSignup() {
-    const user = document.getElementById("signupUser").value.trim();
-    const pass = document.getElementById("signupPass").value.trim();
+document.getElementById("addTaskBtn").onclick = async () => {
+    const username = currentUser.textContent;
 
-    if (!user || !pass) {
-        alert("Fill all fields");
-        return;
-    }
-
-    const result = await apiSignup(user, pass);
-    if (!result.success) {
-        alert(result.message || "Signup failed");
-        return;
-    }
-
-    alert("Account created");
-    showLogin();
-}
-
-async function handleLogin() {
-    const user = document.getElementById("loginUser").value.trim();
-    const pass = document.getElementById("loginPass").value.trim();
-
-    if (!user || !pass) {
-        alert("Fill all fields");
-        return;
-    }
-
-    const result = await apiLogin(user, pass);
-    if (!result.success) {
-        alert(result.message || "Incorrect username or password");
-        return;
-    }
-
-    currentUser = user;
-    document.getElementById("currentUser").textContent = user;
-    showPlanner();
-    await loadTasks();
-}
-
-async function handleAddTask() {
-    if (!currentUser) {
-        alert("You must be logged in");
-        return;
-    }
-
-    const subject = document.getElementById("subject").value.trim();
-    const task = document.getElementById("task").value.trim();
+    const subject = document.getElementById("subject").value;
+    const task = document.getElementById("task").value;
     const due = document.getElementById("due").value;
 
-    if (!subject || !task || !due) {
-        alert("Fill all fields");
-        return;
-    }
-
-    const result = await apiAddTask(currentUser, subject, task, due);
-    if (!result.success) {
-        alert(result.message || "Could not add task");
-        return;
-    }
-
-    document.getElementById("subject").value = "";
-    document.getElementById("task").value = "";
-    document.getElementById("due").value = "";
-
-    await loadTasks();
-}
-
-async function loadTasks() {
-    if (!currentUser) return;
-
-    const list = document.getElementById("taskList");
-    list.innerHTML = "";
-
-    const userTasks = await apiGetTasks(currentUser);
-
-    userTasks.forEach(t => {
-        const div = document.createElement("div");
-        div.innerHTML = `<strong>${t.subject}</strong><br>${t.task}<br>Due: ${t.due}`;
-        list.appendChild(div);
+    const res = await fetch(`/tasks/${username}`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({subject, task, due})
     });
-}
 
-// Event listeners
-document.getElementById("showSignupLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    showSignup();
-});
+    const data = await res.json();
+    if (data.success) {
+        loadTasks(username);
+    } else {
+        alert(data.message);
+    }
+};
 
-document.getElementById("showLoginLink").addEventListener("click", (e) => {
-    e.preventDefault();
-    showLogin();
-});
-
-document.getElementById("signupBtn").addEventListener("click", handleSignup);
-document.getElementById("loginBtn").addEventListener("click", handleLogin);
-document.getElementById("logoutBtn").addEventListener("click", logout);
-document.getElementById("addTaskBtn").addEventListener("click", handleAddTask);
+document.getElementById("logoutBtn").onclick = () => {
+    plannerSection.classList.add("d-none");
+    loginSection.classList.remove("d-none");
+};

@@ -2,15 +2,12 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# In-memory storage (for demo only)
 users = {}
 tasks = {}
-
 
 @app.route("/")
 def home():
     return render_template("index.html")
-
 
 @app.route("/signup", methods=["POST"])
 def signup():
@@ -28,7 +25,6 @@ def signup():
     tasks[user] = []
     return jsonify({"success": True})
 
-
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -40,16 +36,12 @@ def login():
 
     return jsonify({"success": True})
 
-
 @app.route("/tasks/<username>", methods=["GET"])
 def get_tasks(username):
-    username = username.strip()
     return jsonify(tasks.get(username, []))
-
 
 @app.route("/tasks/<username>", methods=["POST"])
 def add_task(username):
-    username = username.strip()
     if username not in tasks:
         return jsonify({"success": False, "message": "User not found"}), 404
 
@@ -61,9 +53,11 @@ def add_task(username):
     if not subject or not task or not due:
         return jsonify({"success": False, "message": "Missing fields"}), 400
 
-    tasks[username].append({"subject": subject, "task": task, "due": due})
+    tasks[username].append({
+        "id": len(tasks[username]) + 1,
+        "subject": subject,
+        "task": task,
+        "due": due
+    })
+
     return jsonify({"success": True})
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
